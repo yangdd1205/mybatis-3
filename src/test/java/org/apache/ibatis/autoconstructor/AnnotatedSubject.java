@@ -19,6 +19,7 @@ import org.apache.ibatis.annotations.AutomapConstructor;
 
 public class AnnotatedSubject {
   private final int id;
+  @Ignore
   private final String name;
   private final int age;
   private final int height;

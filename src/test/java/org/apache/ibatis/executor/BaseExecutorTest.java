@@ -35,6 +35,7 @@ import org.apache.ibatis.domain.blog.Post;
 import org.apache.ibatis.domain.blog.Section;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.session.Configuration;
+import org.apache.ibatis.session.LocalCacheScope;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 import org.apache.ibatis.transaction.jdbc.JdbcTransaction;
@@ -58,6 +59,7 @@ class BaseExecutorTest extends BaseDataTest {
     config.setUseColumnLabel(true);
     config.setDefaultStatementTimeout(5000);
     config.setDefaultFetchSize(100);
+    config.setLocalCacheScope(LocalCacheScope.SESSION);
   }
 
   @Test

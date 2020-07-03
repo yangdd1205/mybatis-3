@@ -21,13 +21,10 @@
         "http://mybatis.org/dtd/mybatis-3-config.dtd">
 
 <configuration>
-
-    <!-- autoMappingBehavior should be set in each test case -->
-
-<!--  <plugins>-->
+  <plugins>
 <!--    <plugin interceptor="com.github.pagehelper.PageInterceptor"></plugin>-->
-<!--    <plugin interceptor="org.apache.ibatis.autoconstructor.RewriteSqlInterceptor"></plugin>-->
-<!--  </plugins>-->
+    <plugin interceptor="org.apache.ibatis.autoconstructor.RewriteSqlInterceptor"></plugin>
+  </plugins>
 
     <environments default="development">
         <environment id="development">
@@ -35,15 +32,16 @@
                 <property name="" value=""/>
             </transactionManager>
             <dataSource type="UNPOOLED">
-                <property name="driver" value="org.hsqldb.jdbcDriver"/>
-                <property name="url" value="jdbc:hsqldb:mem:automapping"/>
-                <property name="username" value="sa"/>
+                <property name="driver" value="com.mysql.jdbc.Driver"/>
+                <property name="url" value="jdbc:mysql://192.168.18.94:3306/roualliance_goods_center"/>
+                <property name="username" value="roualliance"/>
+              <property name="password" value="aWhtNL4Ex6TFA6UNKNU222"/>
             </dataSource>
         </environment>
     </environments>
 
     <mappers>
-        <mapper resource="org/apache/ibatis/autoconstructor/AutoConstructorMapper.xml"/>
+        <mapper class="org.apache.ibatis.executor.LocalCacheTestMapper"/>
     </mappers>
 
 </configuration>

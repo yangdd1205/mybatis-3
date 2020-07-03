@@ -19,6 +19,7 @@ import java.util.Date;
 
 public class PrimitiveSubject {
   private final int id;
+  @Ignore
   private final String name;
   private final int age;
   private final int height;
@@ -34,5 +35,46 @@ public class PrimitiveSubject {
     this.weight = weight;
     this.active = active;
     this.dt = dt;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public int getAge() {
+    return age;
+  }
+
+  public int getHeight() {
+    return height;
+  }
+
+  public int getWeight() {
+    return weight;
+  }
+
+  public boolean isActive() {
+    return active;
+  }
+
+  public Date getDt() {
+    return dt;
+  }
+
+  @Override
+  public String toString() {
+    return "PrimitiveSubject{" +
+      "id=" + id +
+      ", name='" + name + '\'' +
+      ", age=" + age +
+      ", height=" + height +
+      ", weight=" + weight +
+      ", active=" + active +
+      ", dt=" + dt +
+      '}';
   }
 }
