@@ -33,6 +33,8 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 实现 ParameterHandler 接口，默认 ParameterHandler 实现类。
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
@@ -40,8 +42,17 @@ public class DefaultParameterHandler implements ParameterHandler {
 
   private final TypeHandlerRegistry typeHandlerRegistry;
 
+  /**
+   * MappedStatement
+   */
   private final MappedStatement mappedStatement;
+  /**
+   * 参数对象
+   */
   private final Object parameterObject;
+  /**
+   * BoundSql 对象
+   */
   private final BoundSql boundSql;
   private final Configuration configuration;
 
@@ -84,6 +95,7 @@ public class DefaultParameterHandler implements ParameterHandler {
             jdbcType = configuration.getJdbcTypeForNull();
           }
           try {
+            // 替换占位符
             typeHandler.setParameter(ps, i + 1, value, jdbcType);
           } catch (TypeException | SQLException e) {
             throw new TypeException("Could not set parameters for mapping: " + parameterMapping + ". Cause: " + e, e);

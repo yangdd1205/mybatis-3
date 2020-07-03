@@ -1,17 +1,17 @@
 /**
- *    Copyright 2009-2017 the original author or authors.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Copyright 2009-2017 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.ibatis.reflection.wrapper;
 
@@ -27,6 +27,9 @@ import org.apache.ibatis.reflection.invoker.Invoker;
 import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
+ *
+ * 普通对象的 ObjectWrapper 实现类
+ *
  * @author Clinton Begin
  */
 public class BeanWrapper extends BaseWrapper {
@@ -42,10 +45,14 @@ public class BeanWrapper extends BaseWrapper {
 
   @Override
   public Object get(PropertyTokenizer prop) {
+    // 获得集合类型的属性的指定位置的值
     if (prop.getIndex() != null) {
+      //  获得集合类型的属性
       Object collection = resolveCollection(prop, object);
+      // 获得指定位置的值
       return getCollectionValue(prop, collection);
     } else {
+      // 获得属性的值
       return getBeanProperty(prop, object);
     }
   }
@@ -92,15 +99,21 @@ public class BeanWrapper extends BaseWrapper {
 
   @Override
   public Class<?> getGetterType(String name) {
+    // 对 name 进行解析
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
+      // 创建 MetaObject 对象
       MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
+      // 如果 metaValue 为空，则基于 metaClass 获得返回类型
       if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
         return metaClass.getGetterType(name);
       } else {
+        // 如果 metaValue 非空，则基于 metaValue 获得返回类型。
+        // 例如：richType.richMap.nihao ，其中 richMap 是 Map 类型，而 nihao 的类型，需要获得到 nihao 的具体值，才能做真正的判断
         return metaValue.getGetterType(prop.getChildren());
       }
     } else {
+      // 直接获得返回值的类型
       return metaClass.getGetterType(name);
     }
   }
@@ -143,13 +156,23 @@ public class BeanWrapper extends BaseWrapper {
     }
   }
 
+  /**
+   * 实例化属性值
+   *
+   * @param name
+   * @param prop
+   * @param objectFactory
+   * @return
+   */
   @Override
   public MetaObject instantiatePropertyValue(String name, PropertyTokenizer prop, ObjectFactory objectFactory) {
     MetaObject metaValue;
     Class<?> type = getSetterType(prop.getName());
     try {
+      // 创建一个对象
       Object newObject = objectFactory.create(type);
       metaValue = MetaObject.forObject(newObject, metaObject.getObjectFactory(), metaObject.getObjectWrapperFactory(), metaObject.getReflectorFactory());
+      // 设置值
       set(prop, newObject);
     } catch (Exception e) {
       throw new ReflectionException("Cannot set value of property '" + name + "' because '" + name + "' is null and cannot be instantiated on instance of " + type.getName() + ". Cause:" + e.toString(), e);
@@ -159,8 +182,10 @@ public class BeanWrapper extends BaseWrapper {
 
   private Object getBeanProperty(PropertyTokenizer prop, Object object) {
     try {
+      // 方法
       Invoker method = metaClass.getGetInvoker(prop.getName());
       try {
+        // 获取值
         return method.invoke(object, NO_ARGUMENTS);
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);
@@ -174,9 +199,11 @@ public class BeanWrapper extends BaseWrapper {
 
   private void setBeanProperty(PropertyTokenizer prop, Object object, Object value) {
     try {
+      // 获取属性对应的方法
       Invoker method = metaClass.getSetInvoker(prop.getName());
       Object[] params = {value};
       try {
+        // 设置值
         method.invoke(object, params);
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);

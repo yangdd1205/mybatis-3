@@ -91,6 +91,9 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.UnknownTypeHandler;
 
 /**
+ *
+ * Mapper 注解构造器，负责解析 Mapper 接口上的注解
+ *
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
@@ -116,34 +119,47 @@ public class MapperAnnotationBuilder {
   }
 
   public MapperAnnotationBuilder(Configuration configuration, Class<?> type) {
+    // 资源名
     String resource = type.getName().replace('.', '/') + ".java (best guess)";
     this.assistant = new MapperBuilderAssistant(configuration, resource);
     this.configuration = configuration;
     this.type = type;
   }
 
+  /**
+   * Mapper 接口注解解析
+   */
   public void parse() {
     String resource = type.toString();
     if (!configuration.isResourceLoaded(resource)) {
+      // 加载对应的 XML 资源
       loadXmlResource();
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
+      // 解析缓存 CacheNamespace 注解
       parseCache();
+      // 解析缓存引用 CacheNamespaceRef 注解
       parseCacheRef();
+      // 遍历 Mapper 接口中的方法
       for (Method method : type.getMethods()) {
+        // 判断是不是普通的方法
         if (!canHaveStatement(method)) {
           continue;
         }
+        // 如果是 SELECT 并且 还有 @ResultMap 注解
         if (getSqlCommandType(method) == SqlCommandType.SELECT && method.getAnnotation(ResultMap.class) == null) {
+          // 解析 @ResultMap
           parseResultMap(method);
         }
         try {
+          // 解析 SQL 内容
           parseStatement(method);
         } catch (IncompleteElementException e) {
           configuration.addIncompleteMethod(new MethodResolver(this, method));
         }
       }
     }
+    //解析待解析方法
     parsePendingMethods();
   }
 
@@ -152,6 +168,10 @@ public class MapperAnnotationBuilder {
     return !method.isBridge() && !method.isDefault();
   }
 
+
+  /**
+   * 解析待解析方法
+   */
   private void parsePendingMethods() {
     Collection<MethodResolver> incompleteMethods = configuration.getIncompleteMethods();
     synchronized (incompleteMethods) {
@@ -172,8 +192,10 @@ public class MapperAnnotationBuilder {
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
+      // 转换为 xml 文件名称
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
+      // 加载
       InputStream inputStream = type.getResourceAsStream("/" + xmlResource);
       if (inputStream == null) {
         // Search XML mapper that is not in the module but in the classpath.
@@ -184,6 +206,7 @@ public class MapperAnnotationBuilder {
         }
       }
       if (inputStream != null) {
+        // 解析  mapper.XML
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource, configuration.getSqlFragments(), type.getName());
         xmlParser.parse();
       }
@@ -191,6 +214,7 @@ public class MapperAnnotationBuilder {
   }
 
   private void parseCache() {
+    // 获取注解内容
     CacheNamespace cacheDomain = type.getAnnotation(CacheNamespace.class);
     if (cacheDomain != null) {
       Integer size = cacheDomain.size() == 0 ? null : cacheDomain.size();
@@ -227,6 +251,7 @@ public class MapperAnnotationBuilder {
       try {
         assistant.useCacheRef(namespace);
       } catch (IncompleteElementException e) {
+        // 稍后解析
         configuration.addIncompleteCacheRef(new CacheRefResolver(assistant, namespace));
       }
     }
@@ -303,8 +328,11 @@ public class MapperAnnotationBuilder {
   }
 
   void parseStatement(Method method) {
+
+    // 获取参数类型
     Class<?> parameterTypeClass = getParameterType(method);
     LanguageDriver languageDriver = getLanguageDriver(method);
+    //
     SqlSource sqlSource = getSqlSourceFromAnnotations(method, parameterTypeClass, languageDriver);
     if (sqlSource != null) {
       Options options = method.getAnnotation(Options.class);
@@ -402,6 +430,10 @@ public class MapperAnnotationBuilder {
 
   private Class<?> getParameterType(Method method) {
     Class<?> parameterType = null;
+    // 遍历参数类型数组
+    // 排除 RowBounds 和 ResultHandler 两种参数
+    // 1. 如果是多参数，则是 ParamMap 类型
+    // 2. 如果是单参数，则是该参数的类型
     Class<?>[] parameterTypes = method.getParameterTypes();
     for (Class<?> currentParameterType : parameterTypes) {
       if (!RowBounds.class.isAssignableFrom(currentParameterType) && !ResultHandler.class.isAssignableFrom(currentParameterType)) {
@@ -482,7 +514,9 @@ public class MapperAnnotationBuilder {
           throw new BindingException("You cannot supply both a static SQL and SqlProvider to method named " + method.getName());
         }
         Annotation sqlAnnotation = method.getAnnotation(sqlAnnotationType);
+        // value 是个数组，最后拼成一个 SQL
         final String[] strings = (String[]) sqlAnnotation.getClass().getMethod("value").invoke(sqlAnnotation);
+        // 构建 SQL Source 从注解类容
         return buildSqlSourceFromStrings(strings, parameterType, languageDriver);
       } else if (sqlProviderAnnotationType != null) {
         Annotation sqlProviderAnnotation = method.getAnnotation(sqlProviderAnnotationType);
@@ -494,6 +528,13 @@ public class MapperAnnotationBuilder {
     }
   }
 
+  /**
+   * 构建 Sql Source
+   * @param strings
+   * @param parameterTypeClass
+   * @param languageDriver
+   * @return
+   */
   private SqlSource buildSqlSourceFromStrings(String[] strings, Class<?> parameterTypeClass, LanguageDriver languageDriver) {
     return languageDriver.createSqlSource(configuration, String.join(" ", strings).trim(), parameterTypeClass);
   }

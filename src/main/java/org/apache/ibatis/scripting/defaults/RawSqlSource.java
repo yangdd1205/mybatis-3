@@ -26,6 +26,8 @@ import org.apache.ibatis.scripting.xmltags.SqlNode;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 原始的 SQL，适用于仅使用 #{} 表达式，或者不使用任何表达式的情况
+ *
  * Static SqlSource. It is faster than {@link DynamicSqlSource} because mappings are
  * calculated during startup.
  *
@@ -43,17 +45,20 @@ public class RawSqlSource implements SqlSource {
   public RawSqlSource(Configuration configuration, String sql, Class<?> parameterType) {
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> clazz = parameterType == null ? Object.class : parameterType;
+    // 创建 SqlSource 对象
     sqlSource = sqlSourceParser.parse(sql, clazz, new HashMap<>());
   }
 
   private static String getSql(Configuration configuration, SqlNode rootSqlNode) {
     DynamicContext context = new DynamicContext(configuration, null);
     rootSqlNode.apply(context);
+    // 获取 SQL
     return context.getSql();
   }
 
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+    // 获得 BoundSql 对象
     return sqlSource.getBoundSql(parameterObject);
   }
 

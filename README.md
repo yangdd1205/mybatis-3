@@ -1,23 +1,55 @@
-MyBatis SQL Mapper Framework for Java
-=====================================
+## 两种调用方式
 
-[![Build Status](https://travis-ci.org/mybatis/mybatis-3.svg?branch=master)](https://travis-ci.org/mybatis/mybatis-3)
-[![Coverage Status](https://coveralls.io/repos/mybatis/mybatis-3/badge.svg?branch=master&service=github)](https://coveralls.io/github/mybatis/mybatis-3?branch=master)
-[![Maven central](https://maven-badges.herokuapp.com/maven-central/org.mybatis/mybatis/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.mybatis/mybatis)
-[![Sonatype Nexus (Snapshots)](https://img.shields.io/nexus/s/https/oss.sonatype.org/org.mybatis/mybatis.svg)](https://oss.sonatype.org/content/repositories/snapshots/org/mybatis/mybatis/)
-[![License](http://img.shields.io/:license-apache-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
-[![Stack Overflow](http://img.shields.io/:stack%20overflow-mybatis-brightgreen.svg)](http://stackoverflow.com/questions/tagged/mybatis)
-[![Project Stats](https://www.openhub.net/p/mybatis/widgets/project_thin_badge.gif)](https://www.openhub.net/p/mybatis)
+### DefaultSqlSession#getMapper(Class)
 
-![mybatis](http://mybatis.github.io/images/mybatis-logo.png)
+1. 通过 Class 找到 MapperProxy （Mapper 接口的代理类）
+2. 调用方法，会被拦截，根据方法名找到对应的 MappedStatement
 
-The MyBatis SQL mapper framework makes it easier to use a relational database with object-oriented applications.
-MyBatis couples objects with stored procedures or SQL statements using a XML descriptor or annotations.
-Simplicity is the biggest advantage of the MyBatis data mapper over object relational mapping tools.
 
-Essentials
-----------
 
-* [See the docs](http://mybatis.github.io/mybatis-3)
-* [Download Latest](https://github.com/mybatis/mybatis-3/releases)
-* [Download Snapshot](https://oss.sonatype.org/content/repositories/snapshots/org/mybatis/mybatis/)
+### DefaultSqlSession#selectOne(String)
+
+通过 String 找到 MappedStatement
+
+
+
+## @Param 参数的传递
+
+会被 `ParamNameResolver` 参数都会被转成一个 Map。 
+
+
+
+
+## 一级缓存
+
+MyBatis 的一级缓存默认是 `SESSION` 级别。如果多个 `session` 操作同一张表，比如删除或者新增了数据，是会导致脏读的。
+
+
+
+### 与 Spring 集成
+
+MyBatis 与 Spring 集成后，一级缓存只有在使用了事务的方法中生效。
+
+原因是 Mybatis 是把 `session` 暴露出来给用户的，而 Spring 是封装好了。每次只需一个 Mapper 中的方法就会 `session.close()`
+
+而开始事务的 `session` 会保存到 `ThreadLocal` 中。
+
+
+获取 sqlSession 
+
+`org.mybatis.spring.SqlSessionUtils#getSqlSession(ExecutorType,PersistenceExceptionTranslator)`
+
+注册 SqlSession
+
+`org.mybatis.spring.SqlSessionUtils#registerSessionHolder`
+
+
+
+## Executor
+
+![](http://static2.iocoder.cn/images/MyBatis/2020_01_04/05.png)
+
+
+
+
+

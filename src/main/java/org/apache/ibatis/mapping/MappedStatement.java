@@ -29,6 +29,9 @@ import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ *
+ * Mapper XML 中 select|insert|update|delete 节点的映射
+ *
  * @author Clinton Begin
  */
 public final class MappedStatement {
@@ -301,6 +304,8 @@ public final class MappedStatement {
     return resultSets;
   }
 
+
+  //TODO BoundSql
   public BoundSql getBoundSql(Object parameterObject) {
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();

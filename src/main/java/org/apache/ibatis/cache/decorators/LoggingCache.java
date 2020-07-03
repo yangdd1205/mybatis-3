@@ -20,6 +20,8 @@ import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 
 /**
+ * 支持打印日志的 Cache 实现类
+ *
  * @author Clinton Begin
  */
 public class LoggingCache implements Cache {

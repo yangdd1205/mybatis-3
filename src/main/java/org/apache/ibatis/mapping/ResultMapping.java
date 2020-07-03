@@ -26,6 +26,7 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * Mapper xml 文件中对应的为 ResultMap 中的子节点 constructor、
  * @author Clinton Begin
  */
 public class ResultMapping {

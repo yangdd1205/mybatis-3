@@ -33,16 +33,26 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * 支持二级缓存的 Executor
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
 public class CachingExecutor implements Executor {
 
+  /**
+   * 被委托的 Executor 对象
+   */
   private final Executor delegate;
+
+  /**
+   * TransactionalCacheManager 对象
+   */
   private final TransactionalCacheManager tcm = new TransactionalCacheManager();
 
   public CachingExecutor(Executor delegate) {
     this.delegate = delegate;
+    //设置 delegate 被当前执行器所包装
     delegate.setExecutorWrapper(this);
   }
 
@@ -84,7 +94,9 @@ public class CachingExecutor implements Executor {
 
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
+    // 获得 BoundSql 对象
     BoundSql boundSql = ms.getBoundSql(parameterObject);
+    // 创建 CacheKey 对象
     CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);
     return query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
@@ -94,18 +106,23 @@ public class CachingExecutor implements Executor {
       throws SQLException {
     Cache cache = ms.getCache();
     if (cache != null) {
+      // 如果需要清空缓存，则进行清空
       flushCacheIfRequired(ms);
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, boundSql);
         @SuppressWarnings("unchecked")
+        //从二级缓存中，获取结果
         List<E> list = (List<E>) tcm.getObject(cache, key);
         if (list == null) {
+          // 如果不存在，则从数据库中查询
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+          // 缓存结果到二级缓存中
           tcm.putObject(cache, key, list); // issue #578 and #116
         }
         return list;
       }
     }
+    // 不使用缓存，则从数据库中查询
     return delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
 

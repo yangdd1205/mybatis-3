@@ -29,17 +29,21 @@ import org.apache.ibatis.scripting.defaults.RawSqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * XML 语言驱动
+ *
  * @author Eduardo Macarron
  */
 public class XMLLanguageDriver implements LanguageDriver {
 
   @Override
   public ParameterHandler createParameterHandler(MappedStatement mappedStatement, Object parameterObject, BoundSql boundSql) {
+    // 创建参数处理器
     return new DefaultParameterHandler(mappedStatement, parameterObject, boundSql);
   }
 
   @Override
   public SqlSource createSqlSource(Configuration configuration, XNode script, Class<?> parameterType) {
+    // 创建 XMLScriptBuilder 对象，执行解析
     XMLScriptBuilder builder = new XMLScriptBuilder(configuration, script, parameterType);
     return builder.parseScriptNode();
   }
@@ -48,6 +52,7 @@ public class XMLLanguageDriver implements LanguageDriver {
   public SqlSource createSqlSource(Configuration configuration, String script, Class<?> parameterType) {
     // issue #3
     if (script.startsWith("<script>")) {
+      // 使用了脚本，
       XPathParser parser = new XPathParser(script, false, configuration.getVariables(), new XMLMapperEntityResolver());
       return createSqlSource(configuration, parser.evalNode("/script"), parameterType);
     } else {
@@ -55,8 +60,10 @@ public class XMLLanguageDriver implements LanguageDriver {
       script = PropertyParser.parse(script, configuration.getVariables());
       TextSqlNode textSqlNode = new TextSqlNode(script);
       if (textSqlNode.isDynamic()) {
+        // 动态 SQL，创建 DynamicSqlSource
         return new DynamicSqlSource(configuration, textSqlNode);
       } else {
+        // 非动态 SQL，创建  RawSqlSource
         return new RawSqlSource(configuration, script, parameterType);
       }
     }

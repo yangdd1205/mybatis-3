@@ -50,12 +50,24 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
 /**
+ *
+ * Mapper 构建助手
+ *
  * @author Clinton Begin
  */
 public class MapperBuilderAssistant extends BaseBuilder {
 
+  /**
+   * 当前命名空间
+   */
   private String currentNamespace;
+  /**
+   * 资源
+   */
   private final String resource;
+  /**
+   * 缓存
+   */
   private Cache currentCache;
   private boolean unresolvedCacheRef; // issue #676
 
@@ -121,6 +133,18 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
   }
 
+  /**
+   * 构建缓存实例
+   *
+   * @param typeClass
+   * @param evictionClass
+   * @param flushInterval
+   * @param size
+   * @param readWrite
+   * @param blocking
+   * @param props
+   * @return
+   */
   public Cache useNewCache(Class<? extends Cache> typeClass,
       Class<? extends Cache> evictionClass,
       Long flushInterval,
@@ -129,15 +153,17 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean blocking,
       Properties props) {
     Cache cache = new CacheBuilder(currentNamespace)
-        .implementation(valueOrDefault(typeClass, PerpetualCache.class))
-        .addDecorator(valueOrDefault(evictionClass, LruCache.class))
-        .clearInterval(flushInterval)
-        .size(size)
-        .readWrite(readWrite)
+        .implementation(valueOrDefault(typeClass, PerpetualCache.class))// 具体的缓存类
+        .addDecorator(valueOrDefault(evictionClass, LruCache.class))// 缓存装饰者类
+        .clearInterval(flushInterval) // 刷新时间
+        .size(size) // 大小
+        .readWrite(readWrite) // 只读
         .blocking(blocking)
         .properties(props)
-        .build();
+        .build(); // 构建
+    // 添加到整个 MyBatis Configuration 中
     configuration.addCache(cache);
+    // 设置为当前空间的缓存
     currentCache = cache;
     return cache;
   }
@@ -180,15 +206,23 @@ public class MapperBuilderAssistant extends BaseBuilder {
       Discriminator discriminator,
       List<ResultMapping> resultMappings,
       Boolean autoMapping) {
+    // 生成 ResultMap ID
     id = applyCurrentNamespace(id, false);
+    // 完整的继承 extend 属性
     extend = applyCurrentNamespace(extend, true);
 
+    // 如果有继承
     if (extend != null) {
+      // 如果 extend 对应的 ResultMap 在后面或者在其他的 Mapper 文件里面，还没解析到
+      // 会抛出异常，然后给加入到 Configuration#addIncompleteResultMap 中后面被解析
       if (!configuration.hasResultMap(extend)) {
         throw new IncompleteElementException("Could not find a parent resultmap with id '" + extend + "'");
       }
+      // 获取父级 resultMap
       ResultMap resultMap = configuration.getResultMap(extend);
+      // 移除父级 resultMap 中与当前 ResultMap 重复的地方
       List<ResultMapping> extendedResultMappings = new ArrayList<>(resultMap.getResultMappings());
+      // 移除重复的
       extendedResultMappings.removeAll(resultMappings);
       // Remove parent constructor if this resultMap declares a constructor.
       boolean declaresConstructor = false;
@@ -201,11 +235,14 @@ public class MapperBuilderAssistant extends BaseBuilder {
       if (declaresConstructor) {
         extendedResultMappings.removeIf(resultMapping -> resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR));
       }
+      // 合并
       resultMappings.addAll(extendedResultMappings);
     }
+
     ResultMap resultMap = new ResultMap.Builder(configuration, id, type, resultMappings, autoMapping)
         .discriminator(discriminator)
         .build();
+    // 把 ResultMap 添加到全局的 Configuration 中
     configuration.addResultMap(resultMap);
     return resultMap;
   }
@@ -241,6 +278,34 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return new Discriminator.Builder(configuration, resultMapping, namespaceDiscriminatorMap).build();
   }
 
+  /**
+   * 构建 MappedStatement
+   *
+   *
+   * 注：这参数太多了，是否应该封装成类
+   *
+   * @param id
+   * @param sqlSource
+   * @param statementType
+   * @param sqlCommandType
+   * @param fetchSize
+   * @param timeout
+   * @param parameterMap
+   * @param parameterType
+   * @param resultMap
+   * @param resultType
+   * @param resultSetType
+   * @param flushCache
+   * @param useCache
+   * @param resultOrdered
+   * @param keyGenerator
+   * @param keyProperty
+   * @param keyColumn
+   * @param databaseId
+   * @param lang
+   * @param resultSets
+   * @return
+   */
   public MappedStatement addMappedStatement(
       String id,
       SqlSource sqlSource,
@@ -268,6 +333,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     id = applyCurrentNamespace(id, false);
+    // 是否是 SELECT 操作
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
 
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
@@ -288,6 +354,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .useCache(valueOrDefault(useCache, isSelect))
         .cache(currentCache);
 
+    // 获得 ParameterMap ，并设置到 MappedStatement.Builder 中
     ParameterMap statementParameterMap = getStatementParameterMap(parameterMap, parameterType, id);
     if (statementParameterMap != null) {
       statementBuilder.parameterMap(statementParameterMap);
@@ -357,6 +424,14 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return value == null ? defaultValue : value;
   }
 
+  /**
+   * 获取 Statement 的参数类型
+   *
+   * @param parameterMapName
+   * @param parameterTypeClass
+   * @param statementId
+   * @return
+   */
   private ParameterMap getStatementParameterMap(
       String parameterMapName,
       Class<?> parameterTypeClass,
@@ -425,10 +500,12 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean lazy) {
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
     TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
-    List<ResultMapping> composites;
+    List<ResultMapping> composites; // 是否是复合字段
     if ((nestedSelect == null || nestedSelect.isEmpty()) && (foreignColumn == null || foreignColumn.isEmpty())) {
+      // 空
       composites = Collections.emptyList();
     } else {
+      // 复合字段
       composites = parseCompositeColumnName(column);
     }
     return new ResultMapping.Builder(configuration, property, column, javaTypeClass)

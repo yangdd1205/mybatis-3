@@ -22,6 +22,8 @@ import org.apache.ibatis.mapping.ResultMap;
 import org.apache.ibatis.mapping.ResultMapping;
 
 /**
+ * ResultMap 解析器
+ *
  * @author Eduardo Macarron
  */
 public class ResultMapResolver {
@@ -43,6 +45,11 @@ public class ResultMapResolver {
     this.autoMapping = autoMapping;
   }
 
+
+  /**
+   * 解析 ResultMap，其实调用 {@link MapperBuilderAssistant#addResultMap(String, Class, String, Discriminator, List, Boolean)}
+   * @return
+   */
   public ResultMap resolve() {
     return assistant.addResultMap(this.id, this.type, this.extend, this.discriminator, this.resultMappings, this.autoMapping);
   }

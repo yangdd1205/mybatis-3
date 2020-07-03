@@ -20,10 +20,13 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.binding.MapperProxy;
 import org.apache.ibatis.cursor.Cursor;
 import org.apache.ibatis.executor.BatchResult;
 
 /**
+ * 对外暴露的使用方法，屏蔽了 Executor 内部逻辑。
+ *
  * The primary Java interface for working with MyBatis.
  * Through this interface you can execute commands, get mappers and manage transactions.
  *
@@ -32,10 +35,11 @@ import org.apache.ibatis.executor.BatchResult;
 public interface SqlSession extends Closeable {
 
   /**
+   * 查询
    * Retrieve a single row mapped from the statement key.
    * @param <T> the returned object type
    * @param statement
-   *          the statement
+   *          the statement MappedStatement的id
    * @return Mapped object
    */
   <T> T selectOne(String statement);
@@ -275,6 +279,7 @@ public interface SqlSession extends Closeable {
   Configuration getConfiguration();
 
   /**
+   * 返回 {@link MapperProxy} 对象
    * Retrieves a mapper.
    * @param <T> the mapper type
    * @param type Mapper interface class

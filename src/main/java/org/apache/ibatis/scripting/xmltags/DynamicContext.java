@@ -27,6 +27,7 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 动态 SQL
  * @author Clinton Begin
  */
 public class DynamicContext {
@@ -38,13 +39,22 @@ public class DynamicContext {
     OgnlRuntime.setPropertyAccessor(ContextMap.class, new ContextAccessor());
   }
 
+  /**
+   * 上下文集合
+   */
   private final ContextMap bindings;
+  /**
+   * 生成后的 SQL
+   */
   private final StringJoiner sqlBuilder = new StringJoiner(" ");
   private int uniqueNumber = 0;
 
   public DynamicContext(Configuration configuration, Object parameterObject) {
+    // 初始化参数
     if (parameterObject != null && !(parameterObject instanceof Map)) {
+      // 对象元数据
       MetaObject metaObject = configuration.newMetaObject(parameterObject);
+      // 是否存在当前类型的 handler
       boolean existsTypeHandler = configuration.getTypeHandlerRegistry().hasTypeHandler(parameterObject.getClass());
       bindings = new ContextMap(metaObject, existsTypeHandler);
     } else {
@@ -74,9 +84,18 @@ public class DynamicContext {
     return uniqueNumber++;
   }
 
+  /**
+   * 上限文参数
+   */
   static class ContextMap extends HashMap<String, Object> {
     private static final long serialVersionUID = 2977601501966151582L;
+    /**
+     * 参数对应的 MetaObject
+     */
     private final MetaObject parameterMetaObject;
+    /**
+     *
+     */
     private final boolean fallbackParameterObject;
 
     public ContextMap(MetaObject parameterMetaObject, boolean fallbackParameterObject) {
@@ -86,6 +105,7 @@ public class DynamicContext {
 
     @Override
     public Object get(Object key) {
+      //如果存在 key 则直接返回
       String strKey = (String) key;
       if (super.containsKey(strKey)) {
         return super.get(strKey);
@@ -94,27 +114,33 @@ public class DynamicContext {
       if (parameterMetaObject == null) {
         return null;
       }
-
+      // 直接返回原对象
       if (fallbackParameterObject && !parameterMetaObject.hasGetter(strKey)) {
         return parameterMetaObject.getOriginalObject();
       } else {
         // issue #61 do not modify the context when reading
+        // 从 parameterMetaObject 中，获得 key 对应的属性
         return parameterMetaObject.getValue(strKey);
       }
     }
   }
 
+  /**
+   * 上限文访问器
+   */
   static class ContextAccessor implements PropertyAccessor {
 
     @Override
     public Object getProperty(Map context, Object target, Object name) {
       Map map = (Map) target;
 
+      // 优先从 ContextMap 中，获得属性
       Object result = map.get(name);
       if (map.containsKey(name) || result != null) {
         return result;
       }
 
+      //如果没有，则从 PARAMETER_OBJECT_KEY 对应的 Map 中，获得属性
       Object parameterObject = map.get(PARAMETER_OBJECT_KEY);
       if (parameterObject instanceof Map) {
         return ((Map)parameterObject).get(name);

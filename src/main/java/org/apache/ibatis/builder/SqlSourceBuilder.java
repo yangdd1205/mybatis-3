@@ -39,10 +39,22 @@ public class SqlSourceBuilder extends BaseBuilder {
     super(configuration);
   }
 
+  /**
+   * 执行解析原始 SQL ，成为 SqlSource 对象
+   *
+   * @param originalSql 原始 SQL
+   * @param parameterType 参数类型
+   * @param additionalParameters 附加参数集合
+   * @return
+   */
   public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
+    // 创建 ParameterMappingTokenHandler 对象
     ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType, additionalParameters);
+    // 创建 GenericTokenParser 对象。解析 #{}，改为占位符 ?
     GenericTokenParser parser = new GenericTokenParser("#{", "}", handler);
+    // 执行解析
     String sql = parser.parse(originalSql);
+    // 创建 StaticSqlSource 对象
     return new StaticSqlSource(configuration, sql, handler.getParameterMappings());
   }
 
@@ -62,15 +74,30 @@ public class SqlSourceBuilder extends BaseBuilder {
       return parameterMappings;
     }
 
+    /**
+     *
+     * @param content 参数类容。比如：#{age,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler}
+     * @return
+     */
     @Override
     public String handleToken(String content) {
+      // 构建 ParameterMapping 对象，并添加到 parameterMappings 中
       parameterMappings.add(buildParameterMapping(content));
+      // 返回占位符
       return "?";
     }
 
     private ParameterMapping buildParameterMapping(String content) {
+      // 参数内容，转为 map，
+      // 比如 #{age,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler}
+      // property:age
+      // javaType:int
+      // jdbcType:NUMERIC
+      // typeHandler:MyTypeHandler
       Map<String, String> propertiesMap = parseParameterMapping(content);
+      // 参数名
       String property = propertiesMap.get("property");
+      // 参数类型
       Class<?> propertyType;
       if (metaParameters.hasGetter(property)) { // issue #448 get type from additional params
         propertyType = metaParameters.getGetterType(property);

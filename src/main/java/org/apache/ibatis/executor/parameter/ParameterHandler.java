@@ -19,14 +19,25 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
+ * 参数处理器
+ *
  * A parameter handler sets the parameters of the {@code PreparedStatement}.
  *
  * @author Clinton Begin
  */
 public interface ParameterHandler {
 
+  /**
+   * @return 参数对象
+   */
   Object getParameterObject();
 
+  /**
+   * 设置 PreparedStatement 的占位符参数
+   *
+   * @param ps
+   * @throws SQLException
+   */
   void setParameters(PreparedStatement ps) throws SQLException;
 
 }

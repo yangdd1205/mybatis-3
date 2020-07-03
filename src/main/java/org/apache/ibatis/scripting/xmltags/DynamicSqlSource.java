@@ -21,6 +21,10 @@ import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 动态 SQL。SQL 语句中，带 ${} 或者使用了 OGNL 表达式。
+ *
+ * 需要在每次执行 #getBoundSql(Object parameterObject) 方法，根据参数，生成对应的 SQL 。
+ *
  * @author Clinton Begin
  */
 public class DynamicSqlSource implements SqlSource {
@@ -35,11 +39,15 @@ public class DynamicSqlSource implements SqlSource {
 
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+    // 创建 DynamicContext 对象
     DynamicContext context = new DynamicContext(configuration, parameterObject);
+    // 生成动态 SQL
     rootSqlNode.apply(context);
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
+    // 解析各种参数，生成 StaticSqlSource
     SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
+    // 生成 BoundSql 对象
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
     context.getBindings().forEach(boundSql::setAdditionalParameter);
     return boundSql;

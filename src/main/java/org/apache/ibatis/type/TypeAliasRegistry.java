@@ -113,6 +113,7 @@ public class TypeAliasRegistry {
       if (typeAliases.containsKey(key)) {
         value = (Class<T>) typeAliases.get(key);
       } else {
+        // 加载 class
         value = (Class<T>) Resources.classForName(string);
       }
       return value;

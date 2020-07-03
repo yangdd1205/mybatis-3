@@ -18,18 +18,35 @@ package org.apache.ibatis.reflection.property;
 import java.util.Iterator;
 
 /**
+ * 实现 Iterator 接口，属性分词器，支持迭代器的访问方式。
+ *
  * @author Clinton Begin
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
+  /**
+   * 当前字符串
+   */
   private String name;
+  /**
+   *
+   */
   private final String indexedName;
+  /**
+   * 编号
+   */
   private String index;
+  /**
+   * 子串
+   */
   private final String children;
 
   public PropertyTokenizer(String fullname) {
+    // 是否包含"."
     int delim = fullname.indexOf('.');
     if (delim > -1) {
+      // 当前
       name = fullname.substring(0, delim);
+      // 子串
       children = fullname.substring(delim + 1);
     } else {
       name = fullname;

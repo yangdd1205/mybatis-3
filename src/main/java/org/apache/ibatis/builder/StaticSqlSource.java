@@ -23,11 +23,20 @@ import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 静态 SQL。没有参数的 SQL、带占位符(?)的 SQL
+ *
  * @author Clinton Begin
  */
 public class StaticSqlSource implements SqlSource {
 
+  /**
+   * 静态的 SQL
+   */
   private final String sql;
+
+  /**
+   * ParameterMapping 集合
+   */
   private final List<ParameterMapping> parameterMappings;
   private final Configuration configuration;
 
@@ -43,6 +52,7 @@ public class StaticSqlSource implements SqlSource {
 
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+    // 创建 BoundSql 对象
     return new BoundSql(configuration, sql, parameterMappings, parameterObject);
   }
 

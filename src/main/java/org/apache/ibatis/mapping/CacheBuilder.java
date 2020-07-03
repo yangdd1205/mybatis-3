@@ -35,9 +35,13 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 
 /**
+ * 缓存构建器
  * @author Clinton Begin
  */
 public class CacheBuilder {
+  /**
+   * 缓存 ID，Mapper 空间名
+   */
   private final String id;
   private Class<? extends Cache> implementation;
   private final List<Class<? extends Cache>> decorators;
@@ -90,8 +94,11 @@ public class CacheBuilder {
   }
 
   public Cache build() {
+    // 设置默认缓存 class 及其策略 class
     setDefaultImplementations();
+    // 创建缓存实例
     Cache cache = newBaseCacheInstance(implementation, id);
+    // 设置 properties
     setCacheProperties(cache);
     // issue #352, do not apply decorators to custom caches
     if (PerpetualCache.class.equals(cache.getClass())) {
@@ -106,6 +113,12 @@ public class CacheBuilder {
     return cache;
   }
 
+  /**
+   * 设置默认的缓存
+   *
+   * 缓存底层实现 {@link PerpetualCache}
+   * 淘汰策略 {@link LruCache}
+   */
   private void setDefaultImplementations() {
     if (implementation == null) {
       implementation = PerpetualCache.class;
@@ -115,21 +128,31 @@ public class CacheBuilder {
     }
   }
 
+  /**
+   * 设置标准的装饰器
+   * @param cache
+   * @return
+   */
   private Cache setStandardDecorators(Cache cache) {
     try {
       MetaObject metaCache = SystemMetaObject.forObject(cache);
       if (size != null && metaCache.hasSetter("size")) {
         metaCache.setValue("size", size);
       }
+      // 如果需要定时清空
       if (clearInterval != null) {
         cache = new ScheduledCache(cache);
         ((ScheduledCache) cache).setClearInterval(clearInterval);
       }
+      // 如果需要序列化
       if (readWrite) {
         cache = new SerializedCache(cache);
       }
+      // 日志
       cache = new LoggingCache(cache);
+      // 同步操作
       cache = new SynchronizedCache(cache);
+      // 是否是阻塞的
       if (blocking) {
         cache = new BlockingCache(cache);
       }

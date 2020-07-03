@@ -34,10 +34,21 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * 可重用的 Executor
+ *
+ * 每次开始读或写操作，优先从缓存中获取对应的 Statement 对象。如果不存在，才进行创建。
+ * 执行完成后，不关闭该 Statement 对象。
+ * 其它的，和 SimpleExecutor 是一致的。
+ *
  * @author Clinton Begin
  */
 public class ReuseExecutor extends BaseExecutor {
 
+  /**
+   * Statement 缓存
+   *
+   * KEY: SQL
+   */
   private final Map<String, Statement> statementMap = new HashMap<>();
 
   public ReuseExecutor(Configuration configuration, Transaction transaction) {
@@ -55,8 +66,11 @@ public class ReuseExecutor extends BaseExecutor {
   @Override
   public <E> List<E> doQuery(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
     Configuration configuration = ms.getConfiguration();
+    // 创建 StatementHandler 对象
     StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, resultHandler, boundSql);
+    // 初始化 StatementHandler 对象
     Statement stmt = prepareStatement(handler, ms.getStatementLog());
+    // 执行 StatementHandler  ，进行读操作
     return handler.query(stmt, resultHandler);
   }
 
@@ -70,9 +84,11 @@ public class ReuseExecutor extends BaseExecutor {
 
   @Override
   public List<BatchResult> doFlushStatements(boolean isRollback) {
+    // 关闭缓存的 Statement 对象们
     for (Statement stmt : statementMap.values()) {
       closeStatement(stmt);
     }
+    // 返回空集合
     statementMap.clear();
     return Collections.emptyList();
   }
@@ -81,12 +97,15 @@ public class ReuseExecutor extends BaseExecutor {
     Statement stmt;
     BoundSql boundSql = handler.getBoundSql();
     String sql = boundSql.getSql();
+    // 缓存里面是否存在
     if (hasStatementFor(sql)) {
       stmt = getStatement(sql);
       applyTransactionTimeout(stmt);
     } else {
+      // 新建
       Connection connection = getConnection(statementLog);
       stmt = handler.prepare(connection, transaction.getTimeout());
+      // 放到缓存
       putStatement(sql, stmt);
     }
     handler.parameterize(stmt);
@@ -96,6 +115,7 @@ public class ReuseExecutor extends BaseExecutor {
   private boolean hasStatementFor(String sql) {
     try {
       Statement statement = statementMap.get(sql);
+      // 不为空，且没有关闭
       return statement != null && !statement.getConnection().isClosed();
     } catch (SQLException e) {
       return false;

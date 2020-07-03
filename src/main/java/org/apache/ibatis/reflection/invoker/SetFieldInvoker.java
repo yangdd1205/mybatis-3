@@ -32,6 +32,7 @@ public class SetFieldInvoker implements Invoker {
   @Override
   public Object invoke(Object target, Object[] args) throws IllegalAccessException {
     try {
+      // 设置 Field 属性
       field.set(target, args[0]);
     } catch (IllegalAccessException e) {
       if (Reflector.canControlMemberAccessible()) {
@@ -44,6 +45,10 @@ public class SetFieldInvoker implements Invoker {
     return null;
   }
 
+  /**
+   * 参数类型
+   * @return
+   */
   @Override
   public Class<?> getType() {
     return field.getType();

@@ -23,18 +23,42 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ *
+ * 参数映射
+ *
  * @author Clinton Begin
  */
 public class ParameterMapping {
 
   private Configuration configuration;
 
+  /**
+   * 属性名
+   */
   private String property;
+  /**
+   *
+   */
   private ParameterMode mode;
+  /**
+   * 类型
+   */
   private Class<?> javaType = Object.class;
+  /**
+   * JDBC 类型
+   */
   private JdbcType jdbcType;
+  /**
+   * 小数保留的位数
+   */
   private Integer numericScale;
+  /**
+   *
+   */
   private TypeHandler<?> typeHandler;
+  /**
+   *
+   */
   private String resultMapId;
   private String jdbcTypeName;
   private String expression;

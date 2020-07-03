@@ -32,6 +32,9 @@ import org.apache.ibatis.reflection.ParamNameUtil;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ *
+ * Mapper xml 文件中 ResultMap 节点
+ *
  * @author Clinton Begin
  */
 public class ResultMap {
@@ -53,6 +56,9 @@ public class ResultMap {
   private ResultMap() {
   }
 
+  /**
+   * ResultMap 构造类
+   */
   public static class Builder {
     private static final Log log = LogFactory.getLog(Builder.class);
 
@@ -79,6 +85,10 @@ public class ResultMap {
       return resultMap.type;
     }
 
+    /**
+     * 构建 ResultMap 对象
+     * @return
+     */
     public ResultMap build() {
       if (resultMap.id == null) {
         throw new IllegalArgumentException("ResultMaps must have an id");
@@ -90,12 +100,17 @@ public class ResultMap {
       resultMap.propertyResultMappings = new ArrayList<>();
       final List<String> constructorArgNames = new ArrayList<>();
       for (ResultMapping resultMapping : resultMap.resultMappings) {
+        // 是否有嵌套查询
         resultMap.hasNestedQueries = resultMap.hasNestedQueries || resultMapping.getNestedQueryId() != null;
+        // 是否有嵌套结果集
         resultMap.hasNestedResultMaps = resultMap.hasNestedResultMaps || (resultMapping.getNestedResultMapId() != null && resultMapping.getResultSet() == null);
+
+        // 数据库字段名
         final String column = resultMapping.getColumn();
         if (column != null) {
           resultMap.mappedColumns.add(column.toUpperCase(Locale.ENGLISH));
         } else if (resultMapping.isCompositeResult()) {
+          // 是否是复合字段
           for (ResultMapping compositeResultMapping : resultMapping.getComposites()) {
             final String compositeColumn = compositeResultMapping.getColumn();
             if (compositeColumn != null) {
@@ -107,6 +122,7 @@ public class ResultMap {
         if (property != null) {
           resultMap.mappedProperties.add(property);
         }
+        // 包含 constructor 标签
         if (resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR)) {
           resultMap.constructorResultMappings.add(resultMapping);
           if (resultMapping.getProperty() != null) {
@@ -115,6 +131,7 @@ public class ResultMap {
         } else {
           resultMap.propertyResultMappings.add(resultMapping);
         }
+        // 包含 ID 标签
         if (resultMapping.getFlags().contains(ResultFlag.ID)) {
           resultMap.idResultMappings.add(resultMapping);
         }
@@ -137,6 +154,7 @@ public class ResultMap {
         });
       }
       // lock down collections
+      // 不可编辑
       resultMap.resultMappings = Collections.unmodifiableList(resultMap.resultMappings);
       resultMap.idResultMappings = Collections.unmodifiableList(resultMap.idResultMappings);
       resultMap.constructorResultMappings = Collections.unmodifiableList(resultMap.constructorResultMappings);
